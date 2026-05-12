@@ -96,6 +96,61 @@ const FINOS = {
                 </div>
             </div>
         `;
+    },renderCategoryBreakdown() {
+        const expenses = this.data.transactions.filter(t => t.type === 'expense');
+        if (expenses.length === 0) return;
+        
+        const categories = {};
+        expenses.forEach(t => {
+            categories[t.category] = (categories[t.category] || 0) + t.amount;
+        });
+        
+        const totalSpent = Object.values(categories).reduce((a,b) => a+b, 0);
+        const topCategory = Object.keys(categories).reduce((a,b) => categories[a] > categories[b]? a : b);
+        
+        // Feed insight to FinAI
+        if (categories[topCategory] / totalSpent > 0.4) {
+            FinAI.show(`📊 Insight: ${Math.round(categories[topCategory]/totalSpent*100)}% of spending is on "${topCategory}". Consider setting a limit for it.`, 'warn');
+        }
+    },}, // end of renderLimits
+
+    // PASTE THIS NEW FUNCTION HERE
+    renderCategoryBreakdown() {
+        const expenses = this.data.transactions.filter(t => t.type === 'expense');
+        if (expenses.length === 0) return;
+
+        const categories = {};
+        expenses.forEach(t => {
+            categories[t.category] = (categories[t.category] || 0) + t.amount;
+        });
+
+        const totalSpent = Object.values(categories).reduce((a,b) => a+b, 0);
+        if (totalSpent === 0) return;
+
+        const topCategory = Object.keys(categories).reduce((a,b) => categories[a] > categories[b]? a : b);
+
+        if (categories[topCategory] / totalSpent > 0.4) {
+            FinAI.show(`📊 Insight: ${Math.round(categories[topCategory]/totalSpent*100)}% of spending is on "${topCategory}". Consider setting a limit for it.`, 'warn');
+        }
+    },
+
+    autoSweep() { // <-- This is already there in your file
+        const daily = this.data.wallets.find(w => w.name === 'Daily Wallet');
+        //...rest of your existing code
+
+    autoSweep() {
+        const daily = this.data.wallets.find(w => w.name === 'Daily Wallet');
+        const savings = this.data.wallets.find(w => w.name === 'Savings');
+        if (daily && savings && daily.balance > this.data.limits.daily) {
+            const excess = daily.balance - this.data.limits.daily;
+            daily.balance -= excess;
+            savings.balance += excess;
+            this.data.transactions.push({
+                id: Date.now(), type: 'transfer', amount: excess, 
+                walletId: savings.id, category: 'Auto-Sweep', date: new Date().toISOString()
+            });
+            FinAI.show(`🔄 Auto-Sweep: Moved KES ${excess} from Daily Wallet to Savings. Daily Wallet capped at your limit.`, 'success');
+        }
     },
 
     getSpentAmount(period) {
