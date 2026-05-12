@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FINOS - Financial Operating System</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app">
+        <nav class="sidebar">
+            <div class="logo">
+                <span class="logo-icon">◆</span>
+                <h1>FINOS</h1>
+            </div>
+            <ul class="nav-links">
+                <li class="active"><a href="#dashboard">📊 Dashboard</a></li>
+                <li><a href="#wallets">💼 Wallets</a></li>
+                <li><a href="#transactions">💸 Transactions</a></li>
+                <li><a href="#goals">🎯 Goals</a></li>
+                <li><a href="#limits">🛡️ Limits</a></li>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            <header>
+                <h2>Smart Dashboard</h2>
+                <div class="user">John Doe</div>
+            </header>
+
+            <div class="net-worth-card">
+                <p class="label">Total Net Worth</p>
+                <h3 class="amount" id="netWorth">KES 0.00</h3>
+                <div class="chart-container">
+                    <canvas id="netWorthChart"></canvas>
+                </div>
+            </div>
+
+            <section id="wallets">
+                <div class="section-header">
+                    <h3>Purpose-Based Wallets</h3>
+                    <button class="btn-primary" id="addWalletBtn">+ New Wallet</button>
+                </div>
+                <div class="wallets-grid" id="walletsGrid">
+                </div>
+            </section>
+
+            <section id="limits">
+                <h3>Spending Control</h3>
+                <div class="limits-container" id="limitsContainer">
+                </div>
+            </section>
+        </main>
+
+        <div class="finai-bubble" id="finaiBubble">
+            <div class="finai-header">
+                <span>🤖 FinAI</span>
+                <button id="closeFinai">×</button>
+            </div>
+            <div class="finai-body" id="finaiBody">
+                Welcome to FINOS! Let's set up your first wallet.
+            </div>
+        </div>
+        <button class="finai-toggle" id="finaiToggle">🤖</button>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="finai.js"></script>
+</body>
+</html>
