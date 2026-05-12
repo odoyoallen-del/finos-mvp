@@ -50,7 +50,35 @@
                 <h3>Spending Control</h3>
                 <div class="limits-container" id="limitsContainer">
                 </div>
+            </section><!-- Goals Section -->
+            <section id="goals">
+                <div class="section-header">
+                    <h3>Goal-Based Savings</h3>
+                    <button class="btn-primary" id="addGoalBtn">+ New Goal</button>
+                </div>
+                <div class="goals-grid" id="goalsGrid">
+                </div>
             </section>
+
+            <!-- Transaction Modal -->
+            <div class="modal" id="transactionModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Add Transaction</h3>
+                        <button id="closeModal">×</button>
+                    </div>
+                    <form id="transactionForm">
+                        <select id="txType" required>
+                            <option value="income">Income</option>
+                            <option value="expense">Expense</option>
+                        </select>
+                        <input type="number" id="txAmount" placeholder="Amount KES" required>
+                        <select id="txWallet" required></select>
+                        <input type="text" id="txCategory" placeholder="Category: Food, Transport" required>
+                        <button type="submit" class="btn-primary">Save Transaction</button>
+                    </form>
+                </div>
+            </div>
         </main>
 
         <div class="finai-bubble" id="finaiBubble">
