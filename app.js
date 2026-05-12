@@ -7,16 +7,24 @@ const FINOS = {
     },
 
     init() {
+        console.log('FINOS initializing...');
         this.loadData();
         this.renderAll();
         this.initChart();
         this.bindEvents();
-        FinAI.show("Welcome back! Ready to crush your financial goals today?");
+        setTimeout(() => FinAI.show("Welcome to FINOS! Click '+ New Wallet' to get started."), 1000);
     },
 
     loadData() {
         const saved = localStorage.getItem('finos-data');
-        if (saved) this.data = JSON.parse(saved);
+        if (saved) {
+            try {
+                this.data = JSON.parse(saved);
+            } catch(e) {
+                console.error('Failed to load data', e);
+                this.createDefaults();
+            }
+        }
         if (this.data.wallets.length === 0) this.createDefaults();
     },
 
@@ -41,11 +49,13 @@ const FINOS = {
         this.renderWallets();
         this.renderLimits();
         this.renderGoals();
+        this.renderCategoryBreakdown();
         this.updateNetWorth();
     },
 
     renderWallets() {
         const grid = document.getElementById('walletsGrid');
+        if (!grid) return;
         grid.innerHTML = this.data.wallets.map(w => `
             <div class="wallet-card" style="background: linear-gradient(135deg, ${w.color}20, ${w.color}10); border: 1px solid ${w.color}40;">
                 <div class="wallet-header">
@@ -60,6 +70,7 @@ const FINOS = {
 
     renderGoals() {
         const grid = document.getElementById('goalsGrid');
+        if (!grid) return;
         grid.innerHTML = this.data.goals.map(g => {
             const percent = (g.current / g.target) * 100;
             return `
@@ -83,6 +94,7 @@ const FINOS = {
 
     renderLimits() {
         const container = document.getElementById('limitsContainer');
+        if (!container) return;
         const spent = this.getSpentAmount('daily');
         const percent = (spent / this.data.limits.daily) * 100;
         container.innerHTML = `
@@ -92,29 +104,12 @@ const FINOS = {
                     <span>KES ${spent} / ${this.data.limits.daily}</span>
                 </div>
                 <div class="progress-bar">
-                    <div class="progress-fill" style="width: ${Math.min(percent, 100)}%; background: ${percent > 80 ? '#ef4444' : '#3b82f6'}"></div>
+                    <div class="progress-fill" style="width: ${Math.min(percent, 100)}%; background: ${percent > 80? '#ef4444' : '#3b82f6'}"></div>
                 </div>
             </div>
         `;
-    },renderCategoryBreakdown() {
-        const expenses = this.data.transactions.filter(t => t.type === 'expense');
-        if (expenses.length === 0) return;
-        
-        const categories = {};
-        expenses.forEach(t => {
-            categories[t.category] = (categories[t.category] || 0) + t.amount;
-        });
-        
-        const totalSpent = Object.values(categories).reduce((a,b) => a+b, 0);
-        const topCategory = Object.keys(categories).reduce((a,b) => categories[a] > categories[b]? a : b);
-        
-        // Feed insight to FinAI
-        if (categories[topCategory] / totalSpent > 0.4) {
-            FinAI.show(`📊 Insight: ${Math.round(categories[topCategory]/totalSpent*100)}% of spending is on "${topCategory}". Consider setting a limit for it.`, 'warn');
-        }
-    },}, // end of renderLimits
+    },
 
-    // PASTE THIS NEW FUNCTION HERE
     renderCategoryBreakdown() {
         const expenses = this.data.transactions.filter(t => t.type === 'expense');
         if (expenses.length === 0) return;
@@ -134,10 +129,6 @@ const FINOS = {
         }
     },
 
-    autoSweep() { // <-- This is already there in your file
-        const daily = this.data.wallets.find(w => w.name === 'Daily Wallet');
-        //...rest of your existing code
-
     autoSweep() {
         const daily = this.data.wallets.find(w => w.name === 'Daily Wallet');
         const savings = this.data.wallets.find(w => w.name === 'Savings');
@@ -146,36 +137,42 @@ const FINOS = {
             daily.balance -= excess;
             savings.balance += excess;
             this.data.transactions.push({
-                id: Date.now(), type: 'transfer', amount: excess, 
+                id: Date.now(), type: 'transfer', amount: excess,
                 walletId: savings.id, category: 'Auto-Sweep', date: new Date().toISOString()
             });
             FinAI.show(`🔄 Auto-Sweep: Moved KES ${excess} from Daily Wallet to Savings. Daily Wallet capped at your limit.`, 'success');
+            this.renderAll();
         }
     },
 
     getSpentAmount(period) {
+        const today = new Date().toDateString();
         return this.data.transactions
-            .filter(t => t.type === 'expense')
+            .filter(t => t.type === 'expense' && new Date(t.date).toDateString() === today)
             .reduce((sum, t) => sum + t.amount, 0);
     },
 
     updateNetWorth() {
         const total = this.data.wallets.reduce((sum, w) => sum + w.balance, 0);
-        document.getElementById('netWorth').textContent = `KES ${total.toLocaleString()}`;
+        const el = document.getElementById('netWorth');
+        if (el) el.textContent = `KES ${total.toLocaleString()}`;
     },
 
     openTransactionModal(walletId = null) {
         const modal = document.getElementById('transactionModal');
         const walletSelect = document.getElementById('txWallet');
-        walletSelect.innerHTML = this.data.wallets.map(w => 
-            `<option value="${w.id}" ${w.id === walletId ? 'selected' : ''}>${w.name}</option>`
+        if (!modal || !walletSelect) return;
+        walletSelect.innerHTML = this.data.wallets.map(w =>
+            `<option value="${w.id}" ${w.id === walletId? 'selected' : ''}>${w.name}</option>`
         ).join('');
         modal.classList.add('active');
     },
 
     closeTransactionModal() {
-        document.getElementById('transactionModal').classList.remove('active');
-        document.getElementById('transactionForm').reset();
+        const modal = document.getElementById('transactionModal');
+        const form = document.getElementById('transactionForm');
+        if (modal) modal.classList.remove('active');
+        if (form) form.reset();
     },
 
     saveTransaction(e) {
@@ -184,22 +181,23 @@ const FINOS = {
         const amount = parseFloat(document.getElementById('txAmount').value);
         const walletId = parseInt(document.getElementById('txWallet').value);
         const category = document.getElementById('txCategory').value;
-        
+
         const wallet = this.data.wallets.find(w => w.id === walletId);
         if (type === 'expense' && wallet.balance < amount) {
-            FinAI.show(`Not enough in ${wallet.name}. Balance: KES ${wallet.balance}`);
+            FinAI.show(`Not enough in ${wallet.name}. Balance: KES ${wallet.balance}`, 'danger');
             return;
         }
-        
-        wallet.balance += type === 'income' ? amount : -amount;
+
+        wallet.balance += type === 'income'? amount : -amount;
         this.data.transactions.push({
             id: Date.now(), type, amount, walletId, category, date: new Date().toISOString()
         });
-        
+
         this.saveData();
         this.renderAll();
+        this.autoSweep();
         this.closeTransactionModal();
-        FinAI.show(`${type === 'income' ? 'Added' : 'Spent'} KES ${amount} for ${category}. New balance: KES ${wallet.balance}`);
+        FinAI.show(`${type === 'income'? 'Added' : 'Spent'} KES ${amount} for ${category}. New balance: KES ${wallet.balance}`, 'success');
     },
 
     addNewWallet() {
@@ -210,23 +208,25 @@ const FINOS = {
         });
         this.saveData();
         this.renderWallets();
-        FinAI.show(`Created ${name} wallet. You can now add transactions to it.`);
+        FinAI.show(`Created ${name} wallet. You can now add transactions to it.`, 'success');
     },
 
     addNewGoal() {
         const name = prompt('Goal name: e.g. New Car, Home Deposit');
+        if (!name) return;
         const target = parseFloat(prompt('Target amount KES:'));
-        if (!name || !target) return;
+        if (!target || target <= 0) return;
         this.data.goals.push({
             id: Date.now(), name, target, current: 0, deadline: '2026-12-31', icon: '🎯'
         });
         this.saveData();
         this.renderGoals();
-        FinAI.show(`New goal set: ${name} for KES ${target.toLocaleString()}. Let’s start saving!`);
+        FinAI.show(`New goal set: ${name} for KES ${target.toLocaleString()}. Let’s start saving!`, 'success');
     },
 
     initChart() {
         const ctx = document.getElementById('netWorthChart');
+        if (!ctx || typeof Chart === 'undefined') return;
         new Chart(ctx, {
             type: 'line',
             data: {
@@ -247,10 +247,15 @@ const FINOS = {
     },
 
     bindEvents() {
-        document.getElementById('addWalletBtn').onclick = () => this.addNewWallet();
-        document.getElementById('addGoalBtn').onclick = () => this.addNewGoal();
-        document.getElementById('closeModal').onclick = () => this.closeTransactionModal();
-        document.getElementById('transactionForm').onsubmit = (e) => this.saveTransaction(e);
+        const addWalletBtn = document.getElementById('addWalletBtn');
+        const addGoalBtn = document.getElementById('addGoalBtn');
+        const closeModal = document.getElementById('closeModal');
+        const txForm = document.getElementById('transactionForm');
+        
+        if (addWalletBtn) addWalletBtn.onclick = () => this.addNewWallet();
+        if (addGoalBtn) addGoalBtn.onclick = () => this.addNewGoal();
+        if (closeModal) closeModal.onclick = () => this.closeTransactionModal();
+        if (txForm) txForm.onsubmit = (e) => this.saveTransaction(e);
     }
 };
 
