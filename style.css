@@ -224,3 +224,29 @@ section h3 {
                 </div>
             </div>
 }
+/* Make layout stack on mobile */
+@media (max-width: 768px) {
+  .app {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+  }
+  
+  .main-content {
+    width: 100%;
+  }
+}
+
+/* Prevent overflow */
+body, html {
+  overflow-x: hidden;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
