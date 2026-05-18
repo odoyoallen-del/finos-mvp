@@ -250,3 +250,31 @@ img {
   max-width: 100%;
   height: auto;
 }
+body {
+  background: #0B1220;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.dashboard-card {
+  background: #1C2333;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.wallet-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.amount {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.label {
+  color: #9CA3AF;
+  font-size: 12px;
+}
